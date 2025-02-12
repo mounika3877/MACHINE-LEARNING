@@ -1,0 +1,44 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+# Load the dataset
+df = pd.read_csv("SMSSpamCollection", sep='\t', header=None, names=["label", "message"])
+# Convert the labels to a binary format (spam = 1, ham = 0)
+df['label'] = df['label'].map({'spam': 1, 'ham': 0})
+# Split the dataset into features (X) and labels (y)
+X = df['message']
+y = df['label']
+# Split the data into training and testing sets (80% training, 20% testing)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Convert the text data to a matrix of token counts (Bag-of-Words)
+vectorizer = CountVectorizer(stop_words='english')
+X_train_tfidf = vectorizer.fit_transform(X_train)
+X_test_tfidf = vectorizer.transform(X_test)
+# Initialize the Naive Bayes classifier
+model = MultinomialNB()
+# Train the model using the training data
+model.fit(X_train_tfidf, y_train)
+# Make predictions on the test set
+y_pred = model.predict(X_test_tfidf)
+# Evaluate the model's performance
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy * 100:.2f}%")
+# Generate a confusion matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=["Ham", "Spam"], yticklabels=["Ham", "Spam"])
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+# Print classification report
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+# Example of predicting a new message
+new_message = ["Congratulations! You've won a lottery! Claim your prize now!"]
+new_message_tfidf = vectorizer.transform(new_message)
+prediction = model.predict(new_message_tfidf)
+print("Spam" if prediction[0] == 1 else "Ham")
